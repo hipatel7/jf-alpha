@@ -23,14 +23,21 @@ function renderTable(rows) {
 
   const body = rows
     .map(
-      (row) => `
+      (row) => {
+        const composite =
+          row.composite_score !== undefined ? row.composite_score : row.signal_12_1;
+        const momentum =
+          row.momentum_12_1 !== undefined ? row.momentum_12_1 : row.signal_12_1;
+        return `
       <tr>
         <td>${row.ticker}</td>
         <td>${row.rank}</td>
-        <td>${row.signal_12_1.toFixed(4)}</td>
+        <td>${Number(composite).toFixed(4)}</td>
+        <td>${Number(momentum).toFixed(4)}</td>
         <td>${badge(row.action)}</td>
       </tr>
-    `
+    `;
+      }
     )
     .join("");
 
@@ -40,7 +47,8 @@ function renderTable(rows) {
         <tr>
           <th>Ticker</th>
           <th>Rank</th>
-          <th>Signal</th>
+          <th>Composite</th>
+          <th>Momentum</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -67,7 +75,10 @@ function refreshFullTable() {
 function applyData(data) {
   records = data.records;
 
-  asOf.textContent = `As of ${data.as_of_date}`;
+  const fundamentalsDate = data.fundamentals_as_of
+    ? ` | Fundamentals ${data.fundamentals_as_of}`
+    : "";
+  asOf.textContent = `As of ${data.as_of_date}${fundamentalsDate}`;
   signalName.textContent = data.signal;
   buyCount.textContent = data.buy_count;
   sellCount.textContent = data.sell_count;
