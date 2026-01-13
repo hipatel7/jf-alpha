@@ -1,5 +1,5 @@
 {
-  "as_of_date": "2026-01-12",
+  "as_of_date": "2026-01-13",
   "signal": "12-1 momentum",
   "universe_size": 50,
   "buy_count": 10,
@@ -7,301 +7,301 @@
   "records": [
     {
       "ticker": "AMD",
-      "signal_12_1": 0.8173013788575179,
+      "signal_12_1": 0.9082213029989659,
       "rank": 1,
       "action": "BUY"
     },
     {
       "ticker": "AVGO",
-      "signal_12_1": 0.8009245126684401,
+      "signal_12_1": 0.8116445989924659,
       "rank": 2,
       "action": "BUY"
     },
     {
       "ticker": "CAT",
-      "signal_12_1": 0.7042401750353118,
+      "signal_12_1": 0.7823646723646724,
       "rank": 3,
       "action": "BUY"
     },
     {
-      "ticker": "GOOGL",
-      "signal_12_1": 0.6509925238463521,
+      "ticker": "GE",
+      "signal_12_1": 0.6798881705399267,
       "rank": 4,
       "action": "BUY"
     },
     {
-      "ticker": "GOOG",
-      "signal_12_1": 0.6428681099339784,
+      "ticker": "GOOGL",
+      "signal_12_1": 0.6269006456988129,
       "rank": 5,
       "action": "BUY"
     },
     {
-      "ticker": "GE",
-      "signal_12_1": 0.6403493550812658,
+      "ticker": "GS",
+      "signal_12_1": 0.6268392857142857,
       "rank": 6,
       "action": "BUY"
     },
     {
-      "ticker": "AMAT",
-      "signal_12_1": 0.554607604949432,
+      "ticker": "GOOG",
+      "signal_12_1": 0.6239581715587308,
       "rank": 7,
       "action": "BUY"
     },
     {
-      "ticker": "GS",
-      "signal_12_1": 0.5331195476018069,
+      "ticker": "AMAT",
+      "signal_12_1": 0.5736090882609963,
       "rank": 8,
       "action": "BUY"
     },
     {
       "ticker": "RTX",
-      "signal_12_1": 0.5072463768115942,
+      "signal_12_1": 0.5413083137868124,
       "rank": 9,
       "action": "BUY"
     },
     {
       "ticker": "IBM",
-      "signal_12_1": 0.40097679003494946,
+      "signal_12_1": 0.4140614334470991,
       "rank": 10,
       "action": "BUY"
     },
     {
-      "ticker": "ORCL",
-      "signal_12_1": 0.3669854113031752,
+      "ticker": "CSCO",
+      "signal_12_1": 0.349506298944501,
       "rank": 11,
       "action": "HOLD"
     },
     {
-      "ticker": "CSCO",
-      "signal_12_1": 0.35557432432432434,
+      "ticker": "NVDA",
+      "signal_12_1": 0.3312486204105658,
       "rank": 12,
       "action": "HOLD"
     },
     {
-      "ticker": "NVDA",
-      "signal_12_1": 0.31168367711084133,
+      "ticker": "JPM",
+      "signal_12_1": 0.3231333639054488,
       "rank": 13,
       "action": "HOLD"
     },
     {
-      "ticker": "JPM",
-      "signal_12_1": 0.27549047834491835,
+      "ticker": "PM",
+      "signal_12_1": 0.2885189927443448,
       "rank": 14,
       "action": "HOLD"
     },
     {
-      "ticker": "LLY",
-      "signal_12_1": 0.2622138665176188,
+      "ticker": "ORCL",
+      "signal_12_1": 0.28705501618122975,
       "rank": 15,
       "action": "HOLD"
     },
     {
       "ticker": "ABBV",
-      "signal_12_1": 0.2615126050420169,
+      "signal_12_1": 0.2786436033567392,
       "rank": 16,
       "action": "HOLD"
     },
     {
-      "ticker": "WMT",
-      "signal_12_1": 0.232897603485839,
+      "ticker": "LLY",
+      "signal_12_1": 0.26188273534191775,
       "rank": 17,
       "action": "HOLD"
     },
     {
-      "ticker": "PM",
-      "signal_12_1": 0.229033316921057,
+      "ticker": "WMT",
+      "signal_12_1": 0.24215053763440864,
       "rank": 18,
       "action": "HOLD"
     },
     {
-      "ticker": "BA",
-      "signal_12_1": 0.15696320447135537,
+      "ticker": "AAPL",
+      "signal_12_1": 0.1751553320089605,
       "rank": 19,
       "action": "HOLD"
     },
     {
-      "ticker": "AAPL",
-      "signal_12_1": 0.1499259589247337,
+      "ticker": "BA",
+      "signal_12_1": 0.16691860465116282,
       "rank": 20,
       "action": "HOLD"
     },
     {
       "ticker": "QCOM",
-      "signal_12_1": 0.145398541614282,
+      "signal_12_1": 0.15473308701745458,
       "rank": 21,
       "action": "HOLD"
     },
     {
-      "ticker": "KO",
-      "signal_12_1": 0.13774104683195576,
+      "ticker": "MSFT",
+      "signal_12_1": 0.15400405776345627,
       "rank": 22,
       "action": "HOLD"
     },
     {
-      "ticker": "MSFT",
-      "signal_12_1": 0.12719050310910118,
+      "ticker": "KO",
+      "signal_12_1": 0.1316522023906992,
       "rank": 23,
       "action": "HOLD"
     },
     {
-      "ticker": "XOM",
-      "signal_12_1": 0.11792761619751246,
+      "ticker": "V",
+      "signal_12_1": 0.1251232938250546,
       "rank": 24,
       "action": "HOLD"
     },
     {
-      "ticker": "BRK.B",
-      "signal_12_1": 0.08540633852691215,
+      "ticker": "NFLX",
+      "signal_12_1": 0.12320786925951133,
       "rank": 25,
       "action": "HOLD"
     },
     {
-      "ticker": "MCD",
-      "signal_12_1": 0.08236319275008719,
+      "ticker": "XOM",
+      "signal_12_1": 0.12201989862962259,
       "rank": 26,
       "action": "HOLD"
     },
     {
-      "ticker": "ABT",
-      "signal_12_1": 0.07264770240700225,
+      "ticker": "BRK.B",
+      "signal_12_1": 0.12015994216780368,
       "rank": 27,
       "action": "HOLD"
     },
     {
-      "ticker": "META",
-      "signal_12_1": 0.0645303903589205,
+      "ticker": "MA",
+      "signal_12_1": 0.11631363068936129,
       "rank": 28,
       "action": "HOLD"
     },
     {
-      "ticker": "NFLX",
-      "signal_12_1": 0.05954285714285712,
+      "ticker": "ABT",
+      "signal_12_1": 0.09767607514914078,
       "rank": 29,
       "action": "HOLD"
     },
     {
-      "ticker": "INTU",
-      "signal_12_1": 0.05811037457072121,
+      "ticker": "MCD",
+      "signal_12_1": 0.09705642733165654,
       "rank": 30,
       "action": "HOLD"
     },
     {
-      "ticker": "TMO",
-      "signal_12_1": 0.052997632723469135,
+      "ticker": "INTU",
+      "signal_12_1": 0.0843398617326725,
       "rank": 31,
       "action": "HOLD"
     },
     {
-      "ticker": "V",
-      "signal_12_1": 0.04375550749018675,
+      "ticker": "TMO",
+      "signal_12_1": 0.0674706348767311,
       "rank": 32,
       "action": "HOLD"
     },
     {
-      "ticker": "MA",
-      "signal_12_1": 0.04349341595662293,
+      "ticker": "VZ",
+      "signal_12_1": 0.06373975138852139,
       "rank": 33,
       "action": "HOLD"
     },
     {
-      "ticker": "AMZN",
-      "signal_12_1": 0.043443028856975596,
+      "ticker": "META",
+      "signal_12_1": 0.059835027441301536,
       "rank": 34,
       "action": "HOLD"
     },
     {
-      "ticker": "VZ",
-      "signal_12_1": 0.025166923472008218,
+      "ticker": "AMZN",
+      "signal_12_1": 0.051795012332145784,
       "rank": 35,
       "action": "HOLD"
     },
     {
       "ticker": "PEP",
-      "signal_12_1": 0.021564078067421777,
+      "signal_12_1": 0.04486819966348854,
       "rank": 36,
       "action": "HOLD"
     },
     {
-      "ticker": "CVX",
-      "signal_12_1": 0.007385229540918026,
+      "ticker": "MRK",
+      "signal_12_1": -0.0024181360201510627,
       "rank": 37,
       "action": "HOLD"
     },
     {
-      "ticker": "MRK",
-      "signal_12_1": -0.022333500250375504,
+      "ticker": "DHR",
+      "signal_12_1": -0.011485940358191171,
       "rank": 38,
       "action": "HOLD"
     },
     {
-      "ticker": "DHR",
-      "signal_12_1": -0.032214708723592,
+      "ticker": "CVX",
+      "signal_12_1": -0.015802533629358684,
       "rank": 39,
       "action": "HOLD"
     },
     {
-      "ticker": "TXN",
-      "signal_12_1": -0.05212355212355213,
+      "ticker": "LIN",
+      "signal_12_1": -0.026198237353615705,
       "rank": 40,
       "action": "HOLD"
     },
     {
-      "ticker": "COST",
-      "signal_12_1": -0.057107734776842056,
+      "ticker": "TXN",
+      "signal_12_1": -0.04459637128582705,
       "rank": 41,
       "action": "SELL"
     },
     {
-      "ticker": "LIN",
-      "signal_12_1": -0.06506987928858832,
+      "ticker": "NKE",
+      "signal_12_1": -0.04859550561797765,
       "rank": 42,
       "action": "SELL"
     },
     {
-      "ticker": "NKE",
-      "signal_12_1": -0.07714967036049936,
+      "ticker": "COST",
+      "signal_12_1": -0.055990778491685766,
       "rank": 43,
       "action": "SELL"
     },
     {
       "ticker": "HD",
-      "signal_12_1": -0.09315599173553712,
+      "signal_12_1": -0.0831773064197594,
       "rank": 44,
       "action": "SELL"
     },
     {
       "ticker": "PG",
-      "signal_12_1": -0.13744602097470693,
+      "signal_12_1": -0.1122603430877902,
       "rank": 45,
       "action": "SELL"
     },
     {
       "ticker": "ADBE",
-      "signal_12_1": -0.1822060155393489,
+      "signal_12_1": -0.13670181316515573,
       "rank": 46,
       "action": "SELL"
     },
     {
       "ticker": "CRM",
-      "signal_12_1": -0.1918017742428877,
+      "signal_12_1": -0.17461066540821146,
       "rank": 47,
       "action": "SELL"
     },
     {
       "ticker": "UPS",
-      "signal_12_1": -0.21394761754496694,
+      "signal_12_1": -0.18494484101232966,
       "rank": 48,
       "action": "SELL"
     },
     {
       "ticker": "ACN",
-      "signal_12_1": -0.23903502641657115,
+      "signal_12_1": -0.22705051602390014,
       "rank": 49,
       "action": "SELL"
     },
     {
       "ticker": "UNH",
-      "signal_12_1": -0.3668230471243157,
+      "signal_12_1": -0.3459254611815026,
       "rank": 50,
       "action": "SELL"
     }
