@@ -21,6 +21,11 @@ export ALPHAVANTAGE_API_KEY=your_key
 
 The script caches fundamentals for 7 days to respect API limits.
 
+You can also place the key in a `.env` file at the repo root:
+```
+ALPHAVANTAGE_API_KEY=your_key
+```
+
 ```
 . .venv/bin/activate
 python scripts/update_top50_dashboard.py

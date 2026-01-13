@@ -8,6 +8,11 @@ from urllib.request import urlopen
 
 import pandas as pd
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
 TOP_50_TICKERS = [
     "AAPL",
     "MSFT",
@@ -235,6 +240,8 @@ def compute_signal(close: pd.DataFrame, fundamentals: dict) -> pd.DataFrame:
 
 
 def main():
+    if load_dotenv:
+        load_dotenv()
     close, failures = fetch_close_series(TOP_50_TICKERS)
     cache_path = os.path.join(os.getcwd(), "dashboard", "data", "fundamentals_cache.json")
     cache = load_fundamentals_cache(cache_path)
