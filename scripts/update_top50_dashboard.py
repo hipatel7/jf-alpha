@@ -164,10 +164,8 @@ def fetch_fundamentals(tickers):
             "profit_margin": parse_float(payload.get("ProfitMargin")),
         }
 
-        if idx % 5 == 0:
-            time.sleep(12)
-        else:
-            time.sleep(1.2)
+        # Alpha Vantage free tier: 5 requests/minute.
+        time.sleep(12.5)
 
     return data
 

@@ -5,3 +5,5 @@ __pycache__/
 *.pyc
 .DS_Store
 .env
+dashboard/data/fundamentals_cache.json
+dashboard/data/top50_failed.csv
