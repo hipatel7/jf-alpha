@@ -13,6 +13,14 @@ The data generator pulls daily closes from Stooq, computes 12-1 momentum
 Top 20% become BUY, bottom 20% become SELL, the rest are HOLD.
 
 ## Refresh data
+Set `ALPHAVANTAGE_API_KEY` in your environment (recommended via `.env`).
+
+```
+export ALPHAVANTAGE_API_KEY=your_key
+```
+
+The script caches fundamentals for 7 days to respect API limits.
+
 ```
 . .venv/bin/activate
 python scripts/update_top50_dashboard.py
@@ -37,3 +45,7 @@ git push origin gh-pages
 ```
 
 Then enable GitHub Pages in repo settings using `gh-pages` as the source.
+
+## GitHub Actions secret
+Add `ALPHAVANTAGE_API_KEY` in repo settings:
+Settings → Secrets and variables → Actions → New repository secret.
