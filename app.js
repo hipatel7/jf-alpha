@@ -5,6 +5,8 @@ const asOf = document.getElementById("asOf");
 const buyCount = document.getElementById("buyCount");
 const sellCount = document.getElementById("sellCount");
 const universeSize = document.getElementById("universeSize");
+const sepaCount = document.getElementById("sepaCount");
+const sepaTable = document.getElementById("sepaTable");
 const signalName = document.getElementById("signalName");
 const searchInput = document.getElementById("searchInput");
 const actionFilter = document.getElementById("actionFilter");
@@ -60,6 +62,43 @@ function renderTable(rows) {
   `;
 }
 
+function renderSepaTable(rows) {
+  if (!rows.length) {
+    return "<p>No SEPA candidates</p>";
+  }
+
+  const body = rows
+    .map(
+      (row) => `
+      <tr>
+        <td>${row.ticker}</td>
+        <td>${row.rs_score === null ? "-" : row.rs_score.toFixed(4)}</td>
+        <td>${row.ma_50 === null ? "-" : row.ma_50.toFixed(2)}</td>
+        <td>${row.ma_150 === null ? "-" : row.ma_150.toFixed(2)}</td>
+        <td>${row.ma_200 === null ? "-" : row.ma_200.toFixed(2)}</td>
+      </tr>
+    `
+    )
+    .join("");
+
+  return `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>RS Score</th>
+          <th>MA 50</th>
+          <th>MA 150</th>
+          <th>MA 200</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${body}
+      </tbody>
+    </table>
+  `;
+}
+
 function refreshFullTable() {
   const query = searchInput.value.trim().toUpperCase();
   const filter = actionFilter.value;
@@ -85,12 +124,14 @@ function setActiveUniverse(universe) {
   buyCount.textContent = universe.buy_count;
   sellCount.textContent = universe.sell_count;
   universeSize.textContent = universe.universe_size;
+  sepaCount.textContent = universe.sepa_count ?? 0;
 
   const buys = records.filter((row) => row.action === "BUY");
   const sells = records.filter((row) => row.action === "SELL");
 
   buyTable.innerHTML = renderTable(buys);
   sellTable.innerHTML = renderTable(sells);
+  sepaTable.innerHTML = renderSepaTable(universe.sepa_candidates || []);
   refreshFullTable();
 
   [...universeTabs.children].forEach((tab) => {
