@@ -14,7 +14,7 @@ try:
 except ImportError:
     load_dotenv = None
 
-START_DATE = "2024-01-01"
+START_DATE = "2023-01-01"
 END_DATE = "2026-02-01"
 CACHE_DAYS = 7
 FMP_API_URL = "https://financialmodelingprep.com/stable"
@@ -188,7 +188,9 @@ def get_nasdaq100_tickers():
     raise SystemExit("Failed to parse Nasdaq-100 tickers from Wikipedia.")
 
 
-def compute_signal(close: pd.DataFrame, fundamentals: dict, tickers: list) -> tuple:
+def compute_signal(
+    close: pd.DataFrame, fundamentals: dict, tickers: list, spy_close: pd.Series
+) -> tuple:
     signal_12_1 = close.shift(21) / close.shift(252) - 1
     latest_date = signal_12_1.dropna(how="all").index.max()
 
@@ -205,6 +207,23 @@ def compute_signal(close: pd.DataFrame, fundamentals: dict, tickers: list) -> tu
         return pd.DataFrame(), latest_date
 
     momentum = valid.sort_values(ascending=False).rename("momentum_12_1")
+
+    # Relative strength vs SPY (12-month return difference)
+    spy_return = None
+    if latest_date in spy_close.index:
+        spy_return = spy_close.loc[latest_date] / spy_close.shift(252).loc[latest_date] - 1
+
+    rs_scores = {}
+    for ticker in momentum.index:
+        if spy_return is None:
+            rs_scores[ticker] = None
+            continue
+        series = close[ticker]
+        if latest_date not in series.index:
+            rs_scores[ticker] = None
+            continue
+        stock_return = series.loc[latest_date] / series.shift(252).loc[latest_date] - 1
+        rs_scores[ticker] = stock_return - spy_return
 
     value_rows = {}
     quality_rows = {}
@@ -248,6 +267,40 @@ def compute_signal(close: pd.DataFrame, fundamentals: dict, tickers: list) -> tu
 
     composite = (momentum_z + quality_z + value_z) / 3.0
 
+    ma50 = close[available].rolling(50).mean().loc[latest_date]
+    ma150 = close[available].rolling(150).mean().loc[latest_date]
+    ma200 = close[available].rolling(200).mean().loc[latest_date]
+    ma200_prev = close[available].rolling(200).mean().shift(20).loc[latest_date]
+
+    rs_series = pd.Series(rs_scores, name="rs_score")
+    rs_valid = rs_series.dropna()
+    rs_threshold = rs_valid.quantile(0.8) if not rs_valid.empty else None
+
+    sepa_rows = {}
+    for ticker in momentum.index:
+        price = latest_px[ticker]
+        sma50 = ma50.get(ticker)
+        sma150 = ma150.get(ticker)
+        sma200 = ma200.get(ticker)
+        sma200_prev = ma200_prev.get(ticker)
+        rs_score = rs_series.get(ticker)
+
+        if any(pd.isna(x) for x in [price, sma50, sma150, sma200, sma200_prev]):
+            sepa_rows[ticker] = False
+            continue
+        if rs_threshold is not None and (rs_score is None or rs_score < rs_threshold):
+            sepa_rows[ticker] = False
+            continue
+
+        sepa_rows[ticker] = bool(
+            price > sma50
+            and price > sma150
+            and price > sma200
+            and sma50 > sma150
+            and sma150 > sma200
+            and sma200 > sma200_prev
+        )
+
     ranked = pd.DataFrame(
         {
             "momentum_12_1": momentum,
@@ -257,6 +310,11 @@ def compute_signal(close: pd.DataFrame, fundamentals: dict, tickers: list) -> tu
             "quality_z": quality_z,
             "value_z": value_z,
             "composite_score": composite,
+            "rs_score": pd.Series(rs_scores, name="rs_score"),
+            "ma_50": ma50,
+            "ma_150": ma150,
+            "ma_200": ma200,
+            "sepa_pass": pd.Series(sepa_rows, name="sepa_pass"),
         }
     ).sort_values("composite_score", ascending=False)
 
@@ -291,9 +349,13 @@ def main():
         load_dotenv(dotenv_path=os.path.join(root_dir, ".env"))
 
     universes = build_universes()
-    all_tickers = sorted({t for u in universes.values() for t in u["tickers"]})
+    base_tickers = sorted({t for u in universes.values() for t in u["tickers"]})
+    all_tickers = list(base_tickers)
+    if "SPY" not in all_tickers:
+        all_tickers.append("SPY")
 
     close, failures = fetch_close_series(all_tickers)
+    spy_close = close.get("SPY", pd.Series(dtype=float))
 
     cache_path = os.path.join(root_dir, "dashboard", "data", "fundamentals_cache.json")
     cache = load_fundamentals_cache(cache_path)
@@ -301,7 +363,7 @@ def main():
         fundamentals = cache.get("data", {})
         fundamentals_as_of = cache.get("as_of")
     else:
-        fundamentals = fetch_fundamentals(all_tickers)
+        fundamentals = fetch_fundamentals(base_tickers)
         fundamentals_as_of = datetime.utcnow().date().isoformat()
         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
         with open(cache_path, "w", encoding="utf-8") as f:
@@ -311,7 +373,9 @@ def main():
     as_of_date = None
 
     for universe_id, info in universes.items():
-        ranked, latest_date = compute_signal(close, fundamentals, info["tickers"])
+        ranked, latest_date = compute_signal(
+            close, fundamentals, info["tickers"], spy_close
+        )
         as_of_date = latest_date
 
         total = len(ranked)
@@ -337,10 +401,23 @@ def main():
                     if pd.isna(row["value_raw"])
                     else float(row["value_raw"]),
                     "composite_score": float(row["composite_score"]),
+                    "rs_score": None
+                    if pd.isna(row["rs_score"])
+                    else float(row["rs_score"]),
+                    "ma_50": None if pd.isna(row["ma_50"]) else float(row["ma_50"]),
+                    "ma_150": None
+                    if pd.isna(row["ma_150"])
+                    else float(row["ma_150"]),
+                    "ma_200": None
+                    if pd.isna(row["ma_200"])
+                    else float(row["ma_200"]),
+                    "sepa_pass": bool(row["sepa_pass"]),
                     "rank": int(row["rank"]),
                     "action": row["action"],
                 }
             )
+
+        sepa_candidates = [r for r in records if r["sepa_pass"]]
 
         universe_payloads.append(
             {
@@ -349,6 +426,8 @@ def main():
                 "universe_size": total,
                 "buy_count": int((ranked["action"] == "BUY").sum()),
                 "sell_count": int((ranked["action"] == "SELL").sum()),
+                "sepa_count": len(sepa_candidates),
+                "sepa_candidates": sepa_candidates,
                 "records": records,
             }
         )
