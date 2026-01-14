@@ -2,7 +2,8 @@ import json
 import os
 import time
 from datetime import datetime, timedelta
-from urllib.error import URLError
+from io import StringIO
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -13,69 +14,27 @@ try:
 except ImportError:
     load_dotenv = None
 
-TOP_50_TICKERS = [
-    "AAPL",
-    "MSFT",
-    "NVDA",
-    "AMZN",
-    "GOOG",
-    "GOOGL",
-    "META",
-    "BRK.B",
-    "LLY",
-    "AVGO",
-    "JPM",
-    "V",
-    "MA",
-    "XOM",
-    "UNH",
-    "WMT",
-    "PG",
-    "COST",
-    "HD",
-    "ABBV",
-    "MRK",
-    "CVX",
-    "PEP",
-    "KO",
-    "ORCL",
-    "NFLX",
-    "ADBE",
-    "CRM",
-    "CSCO",
-    "ACN",
-    "LIN",
-    "MCD",
-    "AMAT",
-    "DHR",
-    "TXN",
-    "NKE",
-    "QCOM",
-    "AMD",
-    "UPS",
-    "VZ",
-    "TMO",
-    "ABT",
-    "INTU",
-    "PM",
-    "IBM",
-    "CAT",
-    "GE",
-    "BA",
-    "GS",
-    "RTX",
-]
-
 START_DATE = "2024-01-01"
 END_DATE = "2026-02-01"
 CACHE_DAYS = 7
-FMP_API_URL = "https://financialmodelingprep.com/api/v3"
+FMP_API_URL = "https://financialmodelingprep.com/stable"
+SP500_URL = (
+    "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/"
+    "main/data/constituents.csv"
+)
+NASDAQ100_URL = "https://en.wikipedia.org/wiki/Nasdaq-100"
 
 
-def fetch_json(url: str) -> dict:
+def fetch_json(url: str):
     request = Request(url, headers={"User-Agent": "jf-alpha-dashboard/1.0"})
     with urlopen(request) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_html(url: str) -> str:
+    request = Request(url, headers={"User-Agent": "jf-alpha-dashboard/1.0"})
+    with urlopen(request) as response:
+        return response.read().decode("utf-8")
 
 
 def parse_float(value):
@@ -97,28 +56,39 @@ def fetch_close_series(tickers):
 
     for sym in tickers:
         params = {
+            "symbol": sym,
             "from": START_DATE,
             "to": END_DATE,
             "apikey": api_key,
         }
-        url = f"{FMP_API_URL}/historical-price-full/{sym}?{urlencode(params)}"
-        try:
-            payload = fetch_json(url)
-            history = payload.get("historical", []) if isinstance(payload, dict) else []
-            if not history:
-                failures.append(sym)
-                continue
-            df = pd.DataFrame(history)[["date", "close"]]
-            df["date"] = pd.to_datetime(df["date"], errors="coerce")
-            df = df.dropna(subset=["date"])
-            df = df[(df["date"] >= START_DATE) & (df["date"] < END_DATE)]
-            if df.empty:
-                failures.append(sym)
-                continue
-            close_data[sym] = df.set_index("date")["close"].rename(sym)
-        except Exception:
-            failures.append(sym)
-        time.sleep(0.3)
+        url = f"{FMP_API_URL}/historical-price-eod/full?{urlencode(params)}"
+        for attempt in range(3):
+            try:
+                payload = fetch_json(url)
+                if isinstance(payload, dict):
+                    if payload.get("error") or payload.get("status") == "error":
+                        raise ValueError("FMP error response")
+                    history = payload.get("historical", [])
+                else:
+                    history = payload
+                if not history:
+                    raise ValueError("Empty price response")
+                df = pd.DataFrame(history)[["date", "close"]]
+                df["date"] = pd.to_datetime(df["date"], errors="coerce")
+                df = df.dropna(subset=["date"])
+                df = df[(df["date"] >= START_DATE) & (df["date"] < END_DATE)]
+                if df.empty:
+                    raise ValueError("No price rows in date range")
+                close_data[sym] = df.set_index("date")["close"].rename(sym)
+                break
+            except Exception as exc:
+                if isinstance(exc, HTTPError) and exc.code == 429:
+                    time.sleep(6.0)
+                else:
+                    time.sleep(1.5)
+                if attempt == 2:
+                    failures.append(sym)
+        time.sleep(0.6)
 
     if not close_data:
         raise SystemExit("No price data downloaded from FMP. Aborting.")
@@ -147,37 +117,92 @@ def fetch_fundamentals(tickers):
         raise SystemExit("Missing FMP_API_KEY in environment.")
 
     data = {}
-    for idx, symbol in enumerate(tickers, start=1):
-        params = {"apikey": api_key}
-        url = f"{FMP_API_URL}/ratios-ttm/{symbol}?{urlencode(params)}"
-        try:
-            payload = fetch_json(url)
-        except URLError:
-            payload = {}
-
+    for symbol in tickers:
+        params = {"symbol": symbol, "apikey": api_key}
+        url = f"{FMP_API_URL}/ratios?{urlencode(params)}"
+        payload = {}
+        for attempt in range(3):
+            try:
+                payload = fetch_json(url)
+                break
+            except Exception as exc:
+                if isinstance(exc, HTTPError) and exc.code == 429:
+                    time.sleep(6.0)
+                else:
+                    time.sleep(1.5)
         ratios = payload[0] if isinstance(payload, list) and payload else {}
         data[symbol] = {
-            "pe_ratio": parse_float(ratios.get("peRatioTTM")),
-            "pb_ratio": parse_float(ratios.get("priceToBookRatioTTM")),
-            "roe": parse_float(ratios.get("returnOnEquityTTM")),
-            "operating_margin": parse_float(ratios.get("operatingProfitMarginTTM")),
-            "profit_margin": parse_float(ratios.get("netProfitMarginTTM")),
+            "pe_ratio": parse_float(ratios.get("priceEarningsRatio")),
+            "pb_ratio": parse_float(ratios.get("priceToBookRatio")),
+            "roe": parse_float(ratios.get("returnOnEquity")),
+            "operating_margin": parse_float(ratios.get("operatingProfitMargin")),
+            "profit_margin": parse_float(ratios.get("netProfitMargin")),
         }
-
         time.sleep(0.3)
 
     return data
 
 
-def compute_signal(close: pd.DataFrame, fundamentals: dict) -> pd.DataFrame:
+def fetch_market_caps(tickers):
+    api_key = os.getenv("FMP_API_KEY")
+    if not api_key:
+        raise SystemExit("Missing FMP_API_KEY in environment.")
+
+    caps = {}
+    for symbol in tickers:
+        params = {"symbol": symbol, "apikey": api_key}
+        url = f"{FMP_API_URL}/quote?{urlencode(params)}"
+        payload = []
+        for attempt in range(3):
+            try:
+                payload = fetch_json(url)
+                break
+            except Exception as exc:
+                if isinstance(exc, HTTPError) and exc.code == 429:
+                    time.sleep(6.0)
+                else:
+                    time.sleep(1.5)
+        if isinstance(payload, list) and payload:
+            item = payload[0]
+            market_cap = parse_float(item.get("marketCap"))
+            if market_cap is not None:
+                caps[symbol] = market_cap
+        time.sleep(0.4)
+
+    return caps
+
+
+def get_sp500_tickers():
+    table = pd.read_csv(SP500_URL)
+    return table["Symbol"].dropna().unique().tolist()
+
+
+def get_nasdaq100_tickers():
+    html = fetch_html(NASDAQ100_URL)
+    tables = pd.read_html(StringIO(html))
+    for table in tables:
+        cols = [str(c).lower() for c in table.columns]
+        if any("ticker" in c for c in cols):
+            tickers = table[table.columns[0]].dropna().astype(str).tolist()
+            return tickers
+    raise SystemExit("Failed to parse Nasdaq-100 tickers from Wikipedia.")
+
+
+def compute_signal(close: pd.DataFrame, fundamentals: dict, tickers: list) -> tuple:
     signal_12_1 = close.shift(21) / close.shift(252) - 1
     latest_date = signal_12_1.dropna(how="all").index.max()
 
-    latest_sig = signal_12_1.loc[latest_date]
-    latest_px = close.loc[latest_date]
+    available = [t for t in tickers if t in signal_12_1.columns]
+    if not available:
+        return pd.DataFrame(), latest_date
+
+    latest_sig = signal_12_1.loc[latest_date, available]
+    latest_px = close.loc[latest_date, available]
 
     valid = latest_sig.dropna()
     valid = valid[latest_px[valid.index] > 5]
+    if valid.empty:
+        return pd.DataFrame(), latest_date
 
     momentum = valid.sort_values(ascending=False).rename("momentum_12_1")
 
@@ -204,7 +229,9 @@ def compute_signal(close: pd.DataFrame, fundamentals: dict) -> pd.DataFrame:
         margin = op_margin if op_margin is not None else profit_margin
         if margin is not None:
             quality_parts.append(margin)
-        quality_rows[ticker] = sum(quality_parts) / len(quality_parts) if quality_parts else None
+        quality_rows[ticker] = (
+            sum(quality_parts) / len(quality_parts) if quality_parts else None
+        )
 
     value_series = pd.Series(value_rows, name="value_raw")
     quality_series = pd.Series(quality_rows, name="quality_raw")
@@ -236,59 +263,105 @@ def compute_signal(close: pd.DataFrame, fundamentals: dict) -> pd.DataFrame:
     return ranked, latest_date
 
 
+def build_universes():
+    sp500 = get_sp500_tickers()
+    nasdaq100 = get_nasdaq100_tickers()
+
+    sp500_caps = fetch_market_caps(sp500)
+    top100 = [
+        ticker
+        for ticker, _ in sorted(sp500_caps.items(), key=lambda x: x[1], reverse=True)
+    ][:100]
+
+    return {
+        "nasdaq100": {
+            "name": "Nasdaq-100",
+            "tickers": nasdaq100,
+        },
+        "sp500_top100": {
+            "name": "S&P 500 Top 100",
+            "tickers": top100,
+        },
+    }
+
+
 def main():
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if load_dotenv:
-        load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
-    close, failures = fetch_close_series(TOP_50_TICKERS)
-    cache_path = os.path.join(os.getcwd(), "dashboard", "data", "fundamentals_cache.json")
+        load_dotenv(dotenv_path=os.path.join(root_dir, ".env"))
+
+    universes = build_universes()
+    all_tickers = sorted({t for u in universes.values() for t in u["tickers"]})
+
+    close, failures = fetch_close_series(all_tickers)
+
+    cache_path = os.path.join(root_dir, "dashboard", "data", "fundamentals_cache.json")
     cache = load_fundamentals_cache(cache_path)
     if cache:
         fundamentals = cache.get("data", {})
         fundamentals_as_of = cache.get("as_of")
     else:
-        fundamentals = fetch_fundamentals(TOP_50_TICKERS)
+        fundamentals = fetch_fundamentals(all_tickers)
         fundamentals_as_of = datetime.utcnow().date().isoformat()
         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump({"as_of": fundamentals_as_of, "data": fundamentals}, f, indent=2)
 
-    ranked, as_of_date = compute_signal(close, fundamentals)
+    universe_payloads = []
+    as_of_date = None
 
-    total = len(ranked)
-    if total == 0:
-        raise SystemExit("No valid signals to rank.")
+    for universe_id, info in universes.items():
+        ranked, latest_date = compute_signal(close, fundamentals, info["tickers"])
+        as_of_date = latest_date
 
-    n = max(1, total // 5)  # top/bottom 20% of available symbols
-    ranked["rank"] = range(1, total + 1)
-    ranked["action"] = "HOLD"
-    ranked.loc[ranked.index[:n], "action"] = "BUY"
-    ranked.loc[ranked.index[-n:], "action"] = "SELL"
+        total = len(ranked)
+        if total == 0:
+            continue
 
-    records = []
-    for ticker, row in ranked.reset_index().iterrows():
-        records.append(
+        n = max(1, total // 5)
+        ranked["rank"] = range(1, total + 1)
+        ranked["action"] = "HOLD"
+        ranked.loc[ranked.index[:n], "action"] = "BUY"
+        ranked.loc[ranked.index[-n:], "action"] = "SELL"
+
+        records = []
+        for ticker, row in ranked.reset_index().iterrows():
+            records.append(
+                {
+                    "ticker": row["index"],
+                    "momentum_12_1": float(row["momentum_12_1"]),
+                    "quality_raw": None
+                    if pd.isna(row["quality_raw"])
+                    else float(row["quality_raw"]),
+                    "value_raw": None
+                    if pd.isna(row["value_raw"])
+                    else float(row["value_raw"]),
+                    "composite_score": float(row["composite_score"]),
+                    "rank": int(row["rank"]),
+                    "action": row["action"],
+                }
+            )
+
+        universe_payloads.append(
             {
-                "ticker": row["index"],
-                "momentum_12_1": float(row["momentum_12_1"]),
-                "quality_raw": None if pd.isna(row["quality_raw"]) else float(row["quality_raw"]),
-                "value_raw": None if pd.isna(row["value_raw"]) else float(row["value_raw"]),
-                "composite_score": float(row["composite_score"]),
-                "rank": int(row["rank"]),
-                "action": row["action"],
+                "id": universe_id,
+                "name": info["name"],
+                "universe_size": total,
+                "buy_count": int((ranked["action"] == "BUY").sum()),
+                "sell_count": int((ranked["action"] == "SELL").sum()),
+                "records": records,
             }
         )
 
     payload = {
-        "as_of_date": as_of_date.date().isoformat(),
+        "as_of_date": as_of_date.date().isoformat() if as_of_date else "",
         "fundamentals_as_of": fundamentals_as_of,
         "signal": "Composite (momentum + quality + value)",
-        "universe_size": total,
-        "buy_count": int((ranked["action"] == "BUY").sum()),
-        "sell_count": int((ranked["action"] == "SELL").sum()),
-        "records": records,
+        "universes": universe_payloads,
+        "price_failures": failures,
     }
 
-    out_dir = os.path.join(os.getcwd(), "dashboard", "data")
+    out_dir = os.path.join(root_dir, "dashboard", "data")
     os.makedirs(out_dir, exist_ok=True)
 
     out_path = os.path.join(out_dir, "top50_signals.json")
@@ -301,11 +374,9 @@ def main():
         json.dump(payload, f)
         f.write(";")
 
-    if failures:
-        failures_path = os.path.join(out_dir, "top50_failed.csv")
-        pd.DataFrame({"ticker": failures}).to_csv(failures_path, index=False)
-
-    print(f"Wrote {out_path} ({total} symbols) as of {payload['as_of_date']}")
+    print(
+        f"Wrote {out_path} ({len(universe_payloads)} universes) as of {payload['as_of_date']}"
+    )
 
 
 if __name__ == "__main__":

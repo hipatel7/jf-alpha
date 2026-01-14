@@ -8,7 +8,10 @@ const universeSize = document.getElementById("universeSize");
 const signalName = document.getElementById("signalName");
 const searchInput = document.getElementById("searchInput");
 const actionFilter = document.getElementById("actionFilter");
+const universeTabs = document.getElementById("universeTabs");
 
+let universes = [];
+let activeUniverse = null;
 let records = [];
 
 function badge(action) {
@@ -22,13 +25,12 @@ function renderTable(rows) {
   }
 
   const body = rows
-    .map(
-      (row) => {
-        const composite =
-          row.composite_score !== undefined ? row.composite_score : row.signal_12_1;
-        const momentum =
-          row.momentum_12_1 !== undefined ? row.momentum_12_1 : row.signal_12_1;
-        return `
+    .map((row) => {
+      const composite =
+        row.composite_score !== undefined ? row.composite_score : row.signal_12_1;
+      const momentum =
+        row.momentum_12_1 !== undefined ? row.momentum_12_1 : row.signal_12_1;
+      return `
       <tr>
         <td>${row.ticker}</td>
         <td>${row.rank}</td>
@@ -37,8 +39,7 @@ function renderTable(rows) {
         <td>${badge(row.action)}</td>
       </tr>
     `;
-      }
-    )
+    })
     .join("");
 
   return `
@@ -72,17 +73,18 @@ function refreshFullTable() {
   fullTable.innerHTML = renderTable(filtered);
 }
 
-function applyData(data) {
-  records = data.records;
+function setActiveUniverse(universe) {
+  activeUniverse = universe;
+  records = universe.records;
 
-  const fundamentalsDate = data.fundamentals_as_of
-    ? ` | Fundamentals ${data.fundamentals_as_of}`
+  const fundamentalsDate = universe.fundamentals_as_of
+    ? ` | Fundamentals ${universe.fundamentals_as_of}`
     : "";
-  asOf.textContent = `As of ${data.as_of_date}${fundamentalsDate}`;
-  signalName.textContent = data.signal;
-  buyCount.textContent = data.buy_count;
-  sellCount.textContent = data.sell_count;
-  universeSize.textContent = data.universe_size;
+  asOf.textContent = `As of ${universe.as_of_date} | ${universe.name}${fundamentalsDate}`;
+
+  buyCount.textContent = universe.buy_count;
+  sellCount.textContent = universe.sell_count;
+  universeSize.textContent = universe.universe_size;
 
   const buys = records.filter((row) => row.action === "BUY");
   const sells = records.filter((row) => row.action === "SELL");
@@ -90,6 +92,49 @@ function applyData(data) {
   buyTable.innerHTML = renderTable(buys);
   sellTable.innerHTML = renderTable(sells);
   refreshFullTable();
+
+  [...universeTabs.children].forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.id === universe.id);
+  });
+}
+
+function renderTabs() {
+  universeTabs.innerHTML = universes
+    .map(
+      (universe) =>
+        `<button class="tab" data-id="${universe.id}">${universe.name}</button>`
+    )
+    .join("");
+
+  universeTabs.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-id]");
+    if (!button) {
+      return;
+    }
+    const selected = universes.find((u) => u.id === button.dataset.id);
+    if (selected) {
+      setActiveUniverse(selected);
+    }
+  });
+}
+
+function applyData(data) {
+  universes = data.universes || [];
+  signalName.textContent = data.signal;
+
+  if (!universes.length) {
+    asOf.textContent = "No universes available.";
+    return;
+  }
+
+  universes = universes.map((universe) => ({
+    ...universe,
+    as_of_date: data.as_of_date,
+    fundamentals_as_of: data.fundamentals_as_of,
+  }));
+
+  renderTabs();
+  setActiveUniverse(universes[0]);
 }
 
 if (window.TOP50_DATA) {
