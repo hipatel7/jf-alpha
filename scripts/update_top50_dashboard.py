@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 from urllib.error import URLError
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import pandas as pd
 
@@ -73,7 +73,8 @@ FMP_API_URL = "https://financialmodelingprep.com/api/v3"
 
 
 def fetch_json(url: str) -> dict:
-    with urlopen(url) as response:
+    request = Request(url, headers={"User-Agent": "jf-alpha-dashboard/1.0"})
+    with urlopen(request) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -120,7 +121,7 @@ def fetch_close_series(tickers):
         time.sleep(0.3)
 
     if not close_data:
-        raise SystemExit("No data downloaded from Stooq. Aborting.")
+        raise SystemExit("No price data downloaded from FMP. Aborting.")
 
     close = pd.DataFrame(close_data).sort_index()
     return close, failures
@@ -237,7 +238,7 @@ def compute_signal(close: pd.DataFrame, fundamentals: dict) -> pd.DataFrame:
 
 def main():
     if load_dotenv:
-        load_dotenv()
+        load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
     close, failures = fetch_close_series(TOP_50_TICKERS)
     cache_path = os.path.join(os.getcwd(), "dashboard", "data", "fundamentals_cache.json")
     cache = load_fundamentals_cache(cache_path)
