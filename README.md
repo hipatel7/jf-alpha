@@ -13,17 +13,17 @@ The data generator pulls daily closes from Stooq, computes 12-1 momentum
 Top 20% become BUY, bottom 20% become SELL, the rest are HOLD.
 
 ## Refresh data
-Set `ALPHAVANTAGE_API_KEY` in your environment (recommended via `.env`).
+Set `FMP_API_KEY` in your environment (recommended via `.env`).
 
 ```
-export ALPHAVANTAGE_API_KEY=your_key
+export FMP_API_KEY=your_key
 ```
 
 The script caches fundamentals for 7 days to respect API limits.
 
 You can also place the key in a `.env` file at the repo root:
 ```
-ALPHAVANTAGE_API_KEY=your_key
+FMP_API_KEY=your_key
 ```
 
 ```
@@ -52,5 +52,5 @@ git push origin gh-pages
 Then enable GitHub Pages in repo settings using `gh-pages` as the source.
 
 ## GitHub Actions secret
-Add `ALPHAVANTAGE_API_KEY` in repo settings:
+Add `FMP_API_KEY` in repo settings:
 Settings → Secrets and variables → Actions → New repository secret.

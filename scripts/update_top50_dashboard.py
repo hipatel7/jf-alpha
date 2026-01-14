@@ -69,7 +69,7 @@ TOP_50_TICKERS = [
 START_DATE = "2024-01-01"
 END_DATE = "2026-02-01"
 CACHE_DAYS = 7
-AV_API_URL = "https://www.alphavantage.co/query"
+FMP_API_URL = "https://financialmodelingprep.com/api/v3"
 
 
 def fetch_json(url: str) -> dict:
@@ -86,31 +86,38 @@ def parse_float(value):
         return None
 
 
-def stooq_symbol(sym: str) -> str:
-    return sym.replace(".", "-").lower() + ".us"
-
-
 def fetch_close_series(tickers):
+    api_key = os.getenv("FMP_API_KEY")
+    if not api_key:
+        raise SystemExit("Missing FMP_API_KEY in environment.")
+
     close_data = {}
     failures = []
 
     for sym in tickers:
-        stooq = stooq_symbol(sym)
-        url = f"https://stooq.com/q/d/l/?s={stooq}&i=d"
+        params = {
+            "from": START_DATE,
+            "to": END_DATE,
+            "apikey": api_key,
+        }
+        url = f"{FMP_API_URL}/historical-price-full/{sym}?{urlencode(params)}"
         try:
-            df = pd.read_csv(url, usecols=["Date", "Close"])
+            payload = fetch_json(url)
+            history = payload.get("historical", []) if isinstance(payload, dict) else []
+            if not history:
+                failures.append(sym)
+                continue
+            df = pd.DataFrame(history)[["date", "close"]]
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            df = df.dropna(subset=["date"])
+            df = df[(df["date"] >= START_DATE) & (df["date"] < END_DATE)]
             if df.empty:
                 failures.append(sym)
                 continue
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-            df = df.dropna(subset=["Date"])
-            df = df[(df["Date"] >= START_DATE) & (df["Date"] < END_DATE)]
-            if df.empty:
-                failures.append(sym)
-                continue
-            close_data[sym] = df.set_index("Date")["Close"].rename(sym)
+            close_data[sym] = df.set_index("date")["close"].rename(sym)
         except Exception:
             failures.append(sym)
+        time.sleep(0.3)
 
     if not close_data:
         raise SystemExit("No data downloaded from Stooq. Aborting.")
@@ -134,38 +141,29 @@ def load_fundamentals_cache(cache_path: str):
 
 
 def fetch_fundamentals(tickers):
-    api_key = os.getenv("ALPHAVANTAGE_API_KEY")
+    api_key = os.getenv("FMP_API_KEY")
     if not api_key:
-        raise SystemExit("Missing ALPHAVANTAGE_API_KEY in environment.")
+        raise SystemExit("Missing FMP_API_KEY in environment.")
 
     data = {}
     for idx, symbol in enumerate(tickers, start=1):
-        params = {
-            "function": "OVERVIEW",
-            "symbol": symbol,
-            "apikey": api_key,
-        }
-        url = f"{AV_API_URL}?{urlencode(params)}"
+        params = {"apikey": api_key}
+        url = f"{FMP_API_URL}/ratios-ttm/{symbol}?{urlencode(params)}"
         try:
             payload = fetch_json(url)
         except URLError:
             payload = {}
 
-        if "Note" in payload or "Information" in payload:
-            raise SystemExit(
-                "Alpha Vantage rate limit reached. Try again later or reduce calls."
-            )
-
+        ratios = payload[0] if isinstance(payload, list) and payload else {}
         data[symbol] = {
-            "pe_ratio": parse_float(payload.get("PERatio")),
-            "pb_ratio": parse_float(payload.get("PriceToBookRatio")),
-            "roe": parse_float(payload.get("ReturnOnEquityTTM")),
-            "operating_margin": parse_float(payload.get("OperatingMarginTTM")),
-            "profit_margin": parse_float(payload.get("ProfitMargin")),
+            "pe_ratio": parse_float(ratios.get("peRatioTTM")),
+            "pb_ratio": parse_float(ratios.get("priceToBookRatioTTM")),
+            "roe": parse_float(ratios.get("returnOnEquityTTM")),
+            "operating_margin": parse_float(ratios.get("operatingProfitMarginTTM")),
+            "profit_margin": parse_float(ratios.get("netProfitMarginTTM")),
         }
 
-        # Alpha Vantage free tier: 5 requests/minute.
-        time.sleep(12.5)
+        time.sleep(0.3)
 
     return data
 

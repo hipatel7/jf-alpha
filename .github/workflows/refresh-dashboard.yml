@@ -30,7 +30,7 @@ jobs:
       - name: Refresh data
         run: python scripts/update_top50_dashboard.py
         env:
-          ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
 
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v3
