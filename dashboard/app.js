@@ -7,14 +7,15 @@ const sellCount = document.getElementById("sellCount");
 const universeSize = document.getElementById("universeSize");
 const sepaCount = document.getElementById("sepaCount");
 const sepaTable = document.getElementById("sepaTable");
+const sepaCharts = document.getElementById("sepaCharts");
 const signalName = document.getElementById("signalName");
 const searchInput = document.getElementById("searchInput");
 const actionFilter = document.getElementById("actionFilter");
 const universeTabs = document.getElementById("universeTabs");
 
 let universes = [];
-let activeUniverse = null;
 let records = [];
+let chartInstances = [];
 
 function badge(action) {
   const klass = action.toLowerCase();
@@ -99,6 +100,121 @@ function renderSepaTable(rows) {
   `;
 }
 
+function renderCharts(charts) {
+  chartInstances.forEach((chart) => chart.destroy());
+  chartInstances = [];
+
+  if (!charts.length) {
+    sepaCharts.innerHTML = "<p>No charts available</p>";
+    return;
+  }
+
+  sepaCharts.innerHTML = charts
+    .map(
+      (item, index) => `
+      <div class="chart-card">
+        <h3>${item.ticker}</h3>
+        <p class="chart-meta">RS score: ${
+          item.rs_score === null ? "-" : item.rs_score.toFixed(4)
+        }</p>
+        <canvas id="chart-${index}" height="180"></canvas>
+      </div>
+    `
+    )
+    .join("");
+
+  charts.forEach((item, index) => {
+    const ctx = document.getElementById(`chart-${index}`);
+    const data = {
+      labels: item.dates,
+      datasets: [
+        {
+          label: "Close",
+          data: item.close,
+          borderColor: "#1b1a17",
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.2,
+        },
+        {
+          label: "MA 50",
+          data: item.ma50,
+          borderColor: "#0f5132",
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.2,
+        },
+        {
+          label: "MA 150",
+          data: item.ma150,
+          borderColor: "#b4572b",
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.2,
+        },
+        {
+          label: "MA 200",
+          data: item.ma200,
+          borderColor: "#6d6457",
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.2,
+        },
+      ],
+    };
+
+    if (item.rs_line && item.rs_line.some((val) => val !== null)) {
+      data.datasets.push({
+        label: "RS Line",
+        data: item.rs_line,
+        borderColor: "#2a6f97",
+        borderDash: [6, 4],
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.2,
+        yAxisID: "y1",
+      });
+    }
+
+    const chart = new Chart(ctx, {
+      type: "line",
+      data,
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            ticks: {
+              maxTicksLimit: 6,
+            },
+          },
+          y: {
+            position: "left",
+            ticks: {
+              maxTicksLimit: 5,
+            },
+          },
+          y1: {
+            position: "right",
+            grid: {
+              drawOnChartArea: false,
+            },
+            ticks: {
+              maxTicksLimit: 5,
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+        },
+      },
+    });
+
+    chartInstances.push(chart);
+  });
+}
+
 function refreshFullTable() {
   const query = searchInput.value.trim().toUpperCase();
   const filter = actionFilter.value;
@@ -113,7 +229,6 @@ function refreshFullTable() {
 }
 
 function setActiveUniverse(universe) {
-  activeUniverse = universe;
   records = universe.records;
 
   const fundamentalsDate = universe.fundamentals_as_of
@@ -132,6 +247,7 @@ function setActiveUniverse(universe) {
   buyTable.innerHTML = renderTable(buys);
   sellTable.innerHTML = renderTable(sells);
   sepaTable.innerHTML = renderSepaTable(universe.sepa_candidates || []);
+  renderCharts(universe.sepa_charts || []);
   refreshFullTable();
 
   [...universeTabs.children].forEach((tab) => {

@@ -418,6 +418,42 @@ def main():
             )
 
         sepa_candidates = [r for r in records if r["sepa_pass"]]
+        sepa_top = sepa_candidates[:5]
+
+        sepa_charts = []
+        for candidate in sepa_top:
+            ticker = candidate["ticker"]
+            if ticker not in close.columns:
+                continue
+            series = close[ticker].dropna()
+            spy_series = spy_close.reindex(series.index).dropna()
+            series = series.loc[spy_series.index]
+
+            ma50_series = series.rolling(50).mean()
+            ma150_series = series.rolling(150).mean()
+            ma200_series = series.rolling(200).mean()
+
+            tail = series.index[-220:] if len(series.index) > 220 else series.index
+            dates = [d.date().isoformat() for d in tail]
+
+            def to_list(s):
+                return [None if pd.isna(v) else float(v) for v in s.loc[tail]]
+
+            rs_line = series.loc[tail] / spy_series.loc[tail]
+            rs_norm = rs_line / rs_line.iloc[0] if not rs_line.empty else rs_line
+
+            sepa_charts.append(
+                {
+                    "ticker": ticker,
+                    "dates": dates,
+                    "close": to_list(series),
+                    "ma50": to_list(ma50_series),
+                    "ma150": to_list(ma150_series),
+                    "ma200": to_list(ma200_series),
+                    "rs_line": to_list(rs_norm),
+                    "rs_score": candidate.get("rs_score"),
+                }
+            )
 
         universe_payloads.append(
             {
@@ -428,6 +464,7 @@ def main():
                 "sell_count": int((ranked["action"] == "SELL").sum()),
                 "sepa_count": len(sepa_candidates),
                 "sepa_candidates": sepa_candidates,
+                "sepa_charts": sepa_charts,
                 "records": records,
             }
         )

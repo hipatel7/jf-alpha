@@ -71,6 +71,14 @@
 
       <section class="panel">
         <div class="panel-header">
+          <h2>SEPA Charts</h2>
+          <p>Top 5 candidates with moving averages and RS line</p>
+        </div>
+        <div class="chart-grid" id="sepaCharts"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
           <h2>Full Universe</h2>
           <div class="filters">
             <input type="text" id="searchInput" placeholder="Search ticker" />
@@ -87,6 +95,7 @@
 
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="data/top50_signals.js"></script>
     <script src="app.js"></script>
   </body>
