@@ -12,10 +12,21 @@ const signalName = document.getElementById("signalName");
 const searchInput = document.getElementById("searchInput");
 const actionFilter = document.getElementById("actionFilter");
 const universeTabs = document.getElementById("universeTabs");
+const viewTabs = document.getElementById("viewTabs");
+const signalSection = document.getElementById("signalSection");
+const fullSection = document.getElementById("fullSection");
+const sepaSection = document.getElementById("sepaSection");
+const sepaChartsSection = document.getElementById("sepaChartsSection");
 
 let universes = [];
 let records = [];
 let chartInstances = [];
+let activeView = "signals";
+
+const VIEW_OPTIONS = [
+  { id: "signals", label: "Signals" },
+  { id: "sepa", label: "SEPA" },
+];
 
 function badge(action) {
   const klass = action.toLowerCase();
@@ -255,6 +266,19 @@ function setActiveUniverse(universe) {
   });
 }
 
+function setActiveView(viewId) {
+  activeView = viewId;
+  const showSignals = viewId === "signals";
+  signalSection.classList.toggle("is-hidden", !showSignals);
+  fullSection.classList.toggle("is-hidden", !showSignals);
+  sepaSection.classList.toggle("is-hidden", showSignals);
+  sepaChartsSection.classList.toggle("is-hidden", showSignals);
+
+  [...viewTabs.children].forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.id === viewId);
+  });
+}
+
 function renderTabs() {
   universeTabs.innerHTML = universes
     .map(
@@ -272,6 +296,18 @@ function renderTabs() {
     if (selected) {
       setActiveUniverse(selected);
     }
+  });
+
+  viewTabs.innerHTML = VIEW_OPTIONS.map(
+    (view) => `<button class="tab" data-id="${view.id}">${view.label}</button>`
+  ).join("");
+
+  viewTabs.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-id]");
+    if (!button) {
+      return;
+    }
+    setActiveView(button.dataset.id);
   });
 }
 
@@ -292,6 +328,7 @@ function applyData(data) {
 
   renderTabs();
   setActiveUniverse(universes[0]);
+  setActiveView(activeView);
 }
 
 if (window.TOP50_DATA) {

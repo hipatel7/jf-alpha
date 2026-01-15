@@ -70,6 +70,10 @@ h1 {
   margin: 20px 0 8px;
 }
 
+.view-tabs {
+  margin-top: 6px;
+}
+
 .tab {
   border: 1px solid var(--border);
   background: #fff;
@@ -86,6 +90,10 @@ h1 {
   background: var(--accent);
   color: #fff;
   border-color: transparent;
+}
+
+.is-hidden {
+  display: none;
 }
 
 .stats {
