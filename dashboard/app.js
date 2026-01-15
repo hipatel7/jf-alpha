@@ -26,6 +26,7 @@ let activeView = "signals";
 const VIEW_OPTIONS = [
   { id: "signals", label: "Signals" },
   { id: "sepa", label: "SEPA" },
+  { id: "charts", label: "Charts" },
 ];
 
 function badge(action) {
@@ -216,7 +217,13 @@ function renderCharts(charts) {
         },
         plugins: {
           legend: {
-            display: false,
+            display: true,
+            position: "bottom",
+            labels: {
+              boxWidth: 10,
+              boxHeight: 10,
+              usePointStyle: true,
+            },
           },
         },
       },
@@ -269,10 +276,13 @@ function setActiveUniverse(universe) {
 function setActiveView(viewId) {
   activeView = viewId;
   const showSignals = viewId === "signals";
+  const showSepa = viewId === "sepa";
+  const showCharts = viewId === "charts";
+
   signalSection.classList.toggle("is-hidden", !showSignals);
   fullSection.classList.toggle("is-hidden", !showSignals);
-  sepaSection.classList.toggle("is-hidden", showSignals);
-  sepaChartsSection.classList.toggle("is-hidden", showSignals);
+  sepaSection.classList.toggle("is-hidden", !showSepa);
+  sepaChartsSection.classList.toggle("is-hidden", !showCharts);
 
   [...viewTabs.children].forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.id === viewId);

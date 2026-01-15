@@ -326,10 +326,10 @@ def build_universes():
     nasdaq100 = get_nasdaq100_tickers()
 
     sp500_caps = fetch_market_caps(sp500)
-    top100 = [
-        ticker
-        for ticker, _ in sorted(sp500_caps.items(), key=lambda x: x[1], reverse=True)
-    ][:100]
+    sorted_caps_desc = sorted(sp500_caps.items(), key=lambda x: x[1], reverse=True)
+    sorted_caps_asc = list(reversed(sorted_caps_desc))
+    top100 = [ticker for ticker, _ in sorted_caps_desc][:100]
+    bottom100 = [ticker for ticker, _ in sorted_caps_asc][:100]
 
     return {
         "nasdaq100": {
@@ -339,6 +339,10 @@ def build_universes():
         "sp500_top100": {
             "name": "S&P 500 Top 100",
             "tickers": top100,
+        },
+        "sp500_bottom100": {
+            "name": "S&P 500 Bottom 100",
+            "tickers": bottom100,
         },
     }
 

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SEPA: S&P 500 Bottom 100</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <div>
+          <p class="eyebrow">SEPA Focus</p>
+          <h1>S&P 500 Bottom 100</h1>
+          <p class="subtitle" id="asOf">Loading data...</p>
+          <p class="disclaimer-text">
+            Disclaimer: For informational purposes only. This is not investment advice, a
+            recommendation, or an offer to buy or sell securities. Do your own research and
+            consult a licensed financial professional before making investment decisions.
+            Investing involves risk, including the possible loss of principal.
+          </p>
+        </div>
+        <div class="signal-chip" id="signalName">SEPA</div>
+      </header>
+
+      <section class="stats">
+        <div class="card">
+          <p class="label">Universe Size</p>
+          <p class="value" id="universeSize">-</p>
+        </div>
+        <div class="card">
+          <p class="label">SEPA Candidates</p>
+          <p class="value" id="sepaCount">-</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>SEPA Candidates</h2>
+          <p>Trend template + RS filter</p>
+        </div>
+        <div class="table-wrap" id="sepaTable"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Charts</h2>
+          <p>Top 5 candidates with moving averages and RS line</p>
+        </div>
+        <div class="chart-grid" id="sepaCharts"></div>
+      </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="data/top50_signals.js"></script>
+    <script src="sepa_bottom100.js"></script>
+  </body>
+</html>
