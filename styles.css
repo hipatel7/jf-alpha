@@ -151,6 +151,31 @@ h1 {
   color: var(--muted);
 }
 
+.chart-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-bottom: 12px;
+}
+
+.chart-card {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.chart-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.chart-meta {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .filters {
   display: flex;
   gap: 10px;
