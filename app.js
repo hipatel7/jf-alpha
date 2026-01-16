@@ -8,6 +8,7 @@ const universeSize = document.getElementById("universeSize");
 const sepaCount = document.getElementById("sepaCount");
 const sepaTable = document.getElementById("sepaTable");
 const sepaCharts = document.getElementById("sepaCharts");
+const analystTable = document.getElementById("analystTable");
 const signalName = document.getElementById("signalName");
 const searchInput = document.getElementById("searchInput");
 const actionFilter = document.getElementById("actionFilter");
@@ -17,6 +18,7 @@ const signalSection = document.getElementById("signalSection");
 const fullSection = document.getElementById("fullSection");
 const sepaSection = document.getElementById("sepaSection");
 const sepaChartsSection = document.getElementById("sepaChartsSection");
+const analystSection = document.getElementById("analystSection");
 
 let universes = [];
 let records = [];
@@ -26,6 +28,7 @@ let activeView = "signals";
 const VIEW_OPTIONS = [
   { id: "signals", label: "Signals" },
   { id: "sepa", label: "SEPA" },
+  { id: "charts", label: "Charts" },
 ];
 
 function badge(action) {
@@ -102,6 +105,45 @@ function renderSepaTable(rows) {
           <th>MA 50</th>
           <th>MA 150</th>
           <th>MA 200</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${body}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderAnalystTable(rows) {
+  if (!rows.length) {
+    return "<p>No analyst data</p>";
+  }
+
+  const body = rows
+    .map(
+      (row) => `
+      <tr>
+        <td>${row.ticker}</td>
+        <td>${row.consensus ?? "-"}</td>
+        <td>${row.analyst_count ?? "-"}</td>
+        <td>${row.target_consensus === null ? "-" : row.target_consensus.toFixed(2)}</td>
+        <td>${row.target_low === null ? "-" : row.target_low.toFixed(2)}</td>
+        <td>${row.target_high === null ? "-" : row.target_high.toFixed(2)}</td>
+      </tr>
+    `
+    )
+    .join("");
+
+  return `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Consensus</th>
+          <th>Analysts</th>
+          <th>Target</th>
+          <th>Low</th>
+          <th>High</th>
         </tr>
       </thead>
       <tbody>
@@ -216,7 +258,13 @@ function renderCharts(charts) {
         },
         plugins: {
           legend: {
-            display: false,
+            display: true,
+            position: "bottom",
+            labels: {
+              boxWidth: 10,
+              boxHeight: 10,
+              usePointStyle: true,
+            },
           },
         },
       },
@@ -257,6 +305,7 @@ function setActiveUniverse(universe) {
 
   buyTable.innerHTML = renderTable(buys);
   sellTable.innerHTML = renderTable(sells);
+  analystTable.innerHTML = renderAnalystTable(universe.analyst_panel || []);
   sepaTable.innerHTML = renderSepaTable(universe.sepa_candidates || []);
   renderCharts(universe.sepa_charts || []);
   refreshFullTable();
@@ -269,10 +318,14 @@ function setActiveUniverse(universe) {
 function setActiveView(viewId) {
   activeView = viewId;
   const showSignals = viewId === "signals";
+  const showSepa = viewId === "sepa";
+  const showCharts = viewId === "charts";
+
   signalSection.classList.toggle("is-hidden", !showSignals);
   fullSection.classList.toggle("is-hidden", !showSignals);
-  sepaSection.classList.toggle("is-hidden", showSignals);
-  sepaChartsSection.classList.toggle("is-hidden", showSignals);
+  analystSection.classList.toggle("is-hidden", !showSignals);
+  sepaSection.classList.toggle("is-hidden", !showSepa);
+  sepaChartsSection.classList.toggle("is-hidden", !showCharts);
 
   [...viewTabs.children].forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.id === viewId);

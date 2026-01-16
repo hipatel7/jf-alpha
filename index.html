@@ -8,6 +8,13 @@
   </head>
   <body>
     <div class="page">
+      <nav class="portal-nav">
+        <div class="portal-brand">JF Alpha Portal</div>
+        <div class="portal-links">
+          <a class="portal-link is-active" href="index.html">Dashboard</a>
+          <a class="portal-link" href="sepa-bottom100.html">SEPA Bottom 100</a>
+        </div>
+      </nav>
       <header class="header">
         <div>
           <p class="eyebrow">Momentum Monitor</p>
@@ -62,6 +69,14 @@
         </div>
       </section>
 
+      <section class="panel" id="analystSection">
+        <div class="panel-header">
+          <h2>Analyst Consensus</h2>
+          <p>Top buy list consensus and targets</p>
+        </div>
+        <div class="table-wrap" id="analystTable"></div>
+      </section>
+
       <section class="panel" id="sepaSection">
         <div class="panel-header">
           <h2>SEPA Candidates</h2>
@@ -72,8 +87,8 @@
 
       <section class="panel" id="sepaChartsSection">
         <div class="panel-header">
-          <h2>SEPA Charts</h2>
-          <p>Top 5 candidates with moving averages and RS line</p>
+          <h2>Charts</h2>
+          <p>Top 5 SEPA candidates with moving averages and RS line</p>
         </div>
         <div class="chart-grid" id="sepaCharts"></div>
       </section>

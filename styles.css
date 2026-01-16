@@ -27,6 +27,55 @@ body {
   padding: 32px 20px 64px;
 }
 
+.portal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 248, 236, 0.9);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+.portal-brand {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.portal-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.portal-link {
+  text-decoration: none;
+  color: var(--muted);
+  border: 1px solid transparent;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.portal-link:hover {
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+.portal-link.is-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
 .header {
   display: flex;
   align-items: flex-start;
@@ -160,9 +209,9 @@ h1 {
 }
 
 .chart-grid {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   margin-bottom: 12px;
 }
 
