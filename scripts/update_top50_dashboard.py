@@ -111,6 +111,20 @@ def load_fundamentals_cache(cache_path: str):
         return None
 
 
+def load_analyst_cache(cache_path: str):
+    if not os.path.exists(cache_path):
+        return None
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        as_of = datetime.strptime(payload.get("as_of", ""), "%Y-%m-%d").date()
+        if datetime.utcnow().date() - as_of > timedelta(days=CACHE_DAYS):
+            return None
+        return payload
+    except Exception:
+        return None
+
+
 def fetch_fundamentals(tickers):
     api_key = os.getenv("FMP_API_KEY")
     if not api_key:
@@ -141,6 +155,69 @@ def fetch_fundamentals(tickers):
         time.sleep(0.3)
 
     return data
+
+
+def fetch_analyst_data(tickers, cached=None):
+    api_key = os.getenv("FMP_API_KEY")
+    if not api_key:
+        raise SystemExit("Missing FMP_API_KEY in environment.")
+
+    cached = cached or {}
+    results = dict(cached)
+
+    for symbol in tickers:
+        if symbol in results:
+            continue
+
+        grades_params = {"symbol": symbol, "apikey": api_key}
+        grades_url = f"{FMP_API_URL}/grades-consensus?{urlencode(grades_params)}"
+        target_url = f"{FMP_API_URL}/price-target-consensus?{urlencode(grades_params)}"
+
+        grades_payload = []
+        target_payload = []
+        for attempt in range(3):
+            try:
+                grades_payload = fetch_json(grades_url)
+                break
+            except Exception as exc:
+                if isinstance(exc, HTTPError) and exc.code == 429:
+                    time.sleep(6.0)
+                else:
+                    time.sleep(1.5)
+
+        for attempt in range(3):
+            try:
+                target_payload = fetch_json(target_url)
+                break
+            except Exception as exc:
+                if isinstance(exc, HTTPError) and exc.code == 429:
+                    time.sleep(6.0)
+                else:
+                    time.sleep(1.5)
+
+        grades = grades_payload[0] if isinstance(grades_payload, list) else {}
+        target = target_payload[0] if isinstance(target_payload, list) else {}
+
+        counts = [
+            parse_float(grades.get("strongBuy")),
+            parse_float(grades.get("buy")),
+            parse_float(grades.get("hold")),
+            parse_float(grades.get("sell")),
+            parse_float(grades.get("strongSell")),
+        ]
+        analyst_count = int(sum(c for c in counts if c is not None)) if counts else None
+
+        results[symbol] = {
+            "consensus": grades.get("consensus"),
+            "analyst_count": analyst_count,
+            "target_consensus": parse_float(target.get("targetConsensus")),
+            "target_high": parse_float(target.get("targetHigh")),
+            "target_low": parse_float(target.get("targetLow")),
+        }
+
+        time.sleep(0.4)
+
+    return results
 
 
 def fetch_market_caps(tickers):
@@ -373,6 +450,13 @@ def main():
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump({"as_of": fundamentals_as_of, "data": fundamentals}, f, indent=2)
 
+    analyst_cache_path = os.path.join(
+        root_dir, "dashboard", "data", "analyst_cache.json"
+    )
+    analyst_cache = load_analyst_cache(analyst_cache_path)
+    analyst_data = analyst_cache.get("data", {}) if analyst_cache else {}
+    analyst_as_of = analyst_cache.get("as_of") if analyst_cache else None
+
     universe_payloads = []
     as_of_date = None
 
@@ -459,6 +543,31 @@ def main():
                 }
             )
 
+        buy_list = [r for r in records if r["action"] == "BUY"][:10]
+        analyst_tickers = [r["ticker"] for r in buy_list]
+        if analyst_tickers:
+            analyst_data = fetch_analyst_data(analyst_tickers, analyst_data)
+            analyst_as_of = datetime.utcnow().date().isoformat()
+            os.makedirs(os.path.dirname(analyst_cache_path), exist_ok=True)
+            with open(analyst_cache_path, "w", encoding="utf-8") as f:
+                json.dump(
+                    {"as_of": analyst_as_of, "data": analyst_data}, f, indent=2
+                )
+
+        analyst_panel = []
+        for rec in buy_list:
+            meta = analyst_data.get(rec["ticker"], {})
+            analyst_panel.append(
+                {
+                    "ticker": rec["ticker"],
+                    "consensus": meta.get("consensus"),
+                    "analyst_count": meta.get("analyst_count"),
+                    "target_consensus": meta.get("target_consensus"),
+                    "target_high": meta.get("target_high"),
+                    "target_low": meta.get("target_low"),
+                }
+            )
+
         universe_payloads.append(
             {
                 "id": universe_id,
@@ -469,6 +578,7 @@ def main():
                 "sepa_count": len(sepa_candidates),
                 "sepa_candidates": sepa_candidates,
                 "sepa_charts": sepa_charts,
+                "analyst_panel": analyst_panel,
                 "records": records,
             }
         )
@@ -476,6 +586,7 @@ def main():
     payload = {
         "as_of_date": as_of_date.date().isoformat() if as_of_date else "",
         "fundamentals_as_of": fundamentals_as_of,
+        "analyst_as_of": analyst_as_of,
         "signal": "Composite (momentum + quality + value)",
         "universes": universe_payloads,
         "price_failures": failures,

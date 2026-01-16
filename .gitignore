@@ -7,3 +7,4 @@ __pycache__/
 .env
 dashboard/data/fundamentals_cache.json
 dashboard/data/top50_failed.csv
+dashboard/data/analyst_cache.json
