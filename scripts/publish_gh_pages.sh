@@ -10,7 +10,7 @@ if [ ! -d "$WORKTREE_DIR" ]; then
   exit 1
 fi
 
-rsync -a --delete --exclude ".git" "$ROOT_DIR/dashboard/" "$WORKTREE_DIR/"
+rsync -a --delete --exclude ".git" --exclude "data/*cache*.json" "$ROOT_DIR/dashboard/" "$WORKTREE_DIR/"
 
 cd "$WORKTREE_DIR"
 
